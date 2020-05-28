@@ -1,6 +1,6 @@
 import sqlite3
 import numpy as np
-from sklearn.cluster import MeanShift
+from sklearn.cluster import KMeans
 
 
 def db_selector(marked_books):
@@ -26,6 +26,22 @@ def create_user_vector(str_vectors, marks):
         usr_v+=(res[i]*marks[i])
     return usr_v
 
+def clustering():
+    estimator = KMeans(random_state=0)
+
+    db = sqlite3.connect("books.db")
+    cursor = db.cursor()
+    cursor.execute("""SELECT vector FROM vector_books""")
+    db_que = cursor.fetchall()
+    # print(len(db_que))
+    # db_que = db_que[1]
+    print(len(db_que))
+    vectors = []
+    for vector in db_que:
+        print(len(vector))
+        vectors.append([float(x) for x in vector[0].split()])
+    
+    return vectors
 
 if __name__ == '__main__':
     raw_user_data = open("names_and_marks.txt", "r").read().splitlines()
@@ -35,5 +51,8 @@ if __name__ == '__main__':
         names.append(el[0])
         marks.append(int(el[1]))
     str_vectors = [db_selector(name) for name in names]
-    usr_v = create_user_vector(str_vectors, marks)
-    print (len(usr_v))
+    # usr_v = create_user_vector(str_vectors, marks)
+    vec = clustering()
+    print(len(vec[0]))
+
+    # print (len(usr_v))
