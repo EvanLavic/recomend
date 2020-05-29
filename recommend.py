@@ -66,7 +66,7 @@ def clustering(usr_vec):
     # # min_d = np.min(distances)
     # indexes = [min_dis.tolist().index()]
 
-    return vectors
+    return recom
 
 if __name__ == '__main__':
     raw_user_data = open("names_and_marks.txt", "r").read().splitlines()
@@ -76,8 +76,8 @@ if __name__ == '__main__':
         names.append(el[0])
         marks.append(int(el[1]))
     str_vectors = [db_selector(name) for name in names]
-    # usr_v = create_user_vector(str_vectors, marks)
-    vec = clustering()
-    print(len(vec[0]))
+    usr_v = create_user_vector(str_vectors, marks)
+    rec = clustering(usr_v)
+    print(len(rec))
 
     # print (len(usr_v))
