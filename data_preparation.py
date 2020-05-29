@@ -33,9 +33,17 @@ def extract_text_from_pdf(pdf_name):
 #vectorize function that transform text to vectors
 def vectorize(text):
     model = "multi_cased_L-12_H-768_A-12"
-    sentences = text.split(".")
-    embeddings = extract_embeddings(model, sentences)
-    return embeddings
+    sentences = np.array(text.split("."))
+    embeddings = np.array(extract_embeddings(model, sentences))
+
+    #calculate means values to transform arrays in vector with 768 length
+    text_vector = list()
+    for sentence in embeddings:
+        text_vector.append(np.mean(sentence, axis = 0))
+    text_v = text_vector[0]
+    for i in range(1,len(text_vector)):
+        text_v += text_vector[i]
+    return np.array(text_v/len(text_vector))
 
 #function that solving some issues with tensorflow using in bert
 def solving_tensorflow_issues():
@@ -63,18 +71,16 @@ def db_create():
 
 def db_insert(cursor, db, pdf_name, vector):
     str_vect = ""
-    for sentence in vector:
-        for word in sentence:
-            for view in word:
-                str_vect += str(view) + " "
+    for feature in vector:
+        str_vect += str(feature) + " "
     cursor.execute("""INSERT INTO vector_books values(?, ?)""", (pdf_name, str_vect))
     db.commit()
 
 
 if __name__ == '__main__':
     cursor, db = db_create()
-    pdf_names = open("books_names.txt", "r").read().splitlines()
-    # pdf_names = ["09.04.02.pdf"]
+    # pdf_names = open("books_names.txt", "r").read().splitlines()
+    pdf_names = ["09.04.02.pdf"]
     for pdf in pdf_names:
         ar_text = extract_text_from_pdf(pdf)
         solving_tensorflow_issues()
