@@ -3,12 +3,12 @@ import numpy as np
 from sklearn.cluster import KMeans
 from sklearn.metrics import pairwise
 
-def db_selector(marked_books):
+def db_selector(marked_book):
     db = sqlite3.connect("books.db")
     cursor = db.cursor()
-    cursor.execute("""SELECT vector FROM vector_books WHERE title = (?)""", (marked_books,))
-    vectors = cursor.fetchall()
-    return vectors
+    cursor.execute("""SELECT vector FROM vector_books WHERE title = (?)""", (marked_book,))
+    vector = cursor.fetchall()
+    return vector
 
 def create_user_vector(str_vectors, marks):
     vectors = [el[0][0] for el in str_vectors]
@@ -38,21 +38,21 @@ def clustering(usr_vec):
         # print(len(vector))
         vectors.append([float(x) for x in vector[0].split()])
     
-    estimator = KMeans(random_state=0)
+    estimator = KMeans(random_state=0, n_clusters=1)
     estimator.fit(vectors)
     centers = estimator.cluster_centers_
     labels = estimator.labels_
     uniq_lab = np.unique(labels)
     
-    distances = [pairwise.cosine_distances(usr_vec, center) for center in centers]
+    distances = [pairwise.cosine_distances(usr_vec.reshape(1, -1), center.reshape(1, -1)) for center in centers]
     min_d = np.min(distances)
     index = distances.index(min_d)
     usr_clust_lab = uniq_lab[index]
 
-    recom = list()
+    rec_vec = list()
     for i in range(len(labels)):
         if labels[i] == usr_clust_lab:
-            recom.append(vectors[i])
+            rec_vec.append(vectors[i])
     
     # distances = []
     # min_dis = []
@@ -66,7 +66,33 @@ def clustering(usr_vec):
     # # min_d = np.min(distances)
     # indexes = [min_dis.tolist().index()]
 
-    return recom
+    return rec_vec
+
+
+def books_rec(rec, book_names):
+    rec_str = []
+    for vec in rec:
+        str_v = ""
+        for el in vec:
+            str_v += str(el) + " "
+        rec_str.append(str_v)
+    db = sqlite3.connect("books.db")
+    cursor = db.cursor()
+    db_que = list()
+    for vec in rec_str:
+        cursor.execute("""SELECT title FROM vector_books WHERE vector = (?)""", (vec,))
+        db_que.append(cursor.fetchall())
+    # print(len(db_que))
+    books = []
+    for vector in db_que:
+        books.append([x for x in vector[0]])
+    rec_books = []
+    for book in books:
+        if book[0] not in book_names:
+            print(book[0])
+            rec_books.append(book[0])
+    return rec_books
+
 
 if __name__ == '__main__':
     raw_user_data = open("names_and_marks.txt", "r").read().splitlines()
@@ -77,7 +103,10 @@ if __name__ == '__main__':
         marks.append(int(el[1]))
     str_vectors = [db_selector(name) for name in names]
     usr_v = create_user_vector(str_vectors, marks)
-    rec = clustering(usr_v)
-    print(len(rec))
-
+    rec_v = clustering(usr_v)
+    books = books_rec(rec_v, names)
+    print(len(books))
+    with open("user_recomendation", "w") as f:
+        if books:
+            f.write(str(books))
     # print (len(usr_v))
