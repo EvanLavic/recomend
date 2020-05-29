@@ -73,8 +73,8 @@ def db_insert(cursor, db, pdf_name, vector):
 
 if __name__ == '__main__':
     cursor, db = db_create()
-    # pdf_names = open("books_names.txt", "r").readlines()
-    pdf_names = ["09.04.02.pdf"]
+    pdf_names = open("books_names.txt", "r").read().splitlines()
+    # pdf_names = ["09.04.02.pdf"]
     for pdf in pdf_names:
         ar_text = extract_text_from_pdf(pdf)
         solving_tensorflow_issues()

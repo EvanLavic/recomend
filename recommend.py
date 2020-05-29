@@ -1,7 +1,7 @@
 import sqlite3
 import numpy as np
 from sklearn.cluster import KMeans
-
+from sklearn.metrics import pairwise
 
 def db_selector(marked_books):
     db = sqlite3.connect("books.db")
@@ -26,21 +26,46 @@ def create_user_vector(str_vectors, marks):
         usr_v+=(res[i]*marks[i])
     return usr_v
 
-def clustering():
-    estimator = KMeans(random_state=0)
-
+def clustering(usr_vec):
+    
     db = sqlite3.connect("books.db")
     cursor = db.cursor()
     cursor.execute("""SELECT vector FROM vector_books""")
     db_que = cursor.fetchall()
     # print(len(db_que))
-    # db_que = db_que[1]
-    print(len(db_que))
     vectors = []
     for vector in db_que:
-        print(len(vector))
+        # print(len(vector))
         vectors.append([float(x) for x in vector[0].split()])
     
+    estimator = KMeans(random_state=0)
+    estimator.fit(vectors)
+    centers = estimator.cluster_centers_
+    labels = estimator.labels_
+    uniq_lab = np.unique(labels)
+    
+    distances = [pairwise.cosine_distances(usr_vec, center) for center in centers]
+    min_d = np.min(distances)
+    index = distances.index(min_d)
+    usr_clust_lab = uniq_lab[index]
+
+    recom = list()
+    for i in range(len(labels)):
+        if labels[i] == usr_clust_lab:
+            recom.append(vectors[i])
+    
+    # distances = []
+    # min_dis = []
+    # for vector in vectors:
+    #     distance = [pairwise.cosine_distances(vector, center) for center in centers]
+    #     # distances.append(distance)
+    #     min_dis = np.min(distance)
+    #     ind_min = distance.index(min_dis)
+
+    #     # distances.append([pairwise.cosine_distances(vector, center) for center in centers])
+    # # min_d = np.min(distances)
+    # indexes = [min_dis.tolist().index()]
+
     return vectors
 
 if __name__ == '__main__':
